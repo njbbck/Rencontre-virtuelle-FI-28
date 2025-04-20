@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rencontre virtuelle FI-28</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 15px;
+            line-height: 1.5;
+            background-color: #f5f5f7;
+            color: #333;
+        }
+        h1, h2, h3 {
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 22px;
+        }
+        h2 {
+            font-size: 20px;
+        }
+        h3 {
+            font-size: 18px;
+        }
+        p {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .card {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .weekend-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background-color: #f5f5f7;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+        }
+        .selected {
+            background-color: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        .selected .weekend {
+            color: white;
+        }
+        .weekend {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        input[type="text"] {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #007aff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+        button.green {
+            background-color: #4CAF50;
+        }
+        button.red {
+            background-color: #ff3b30;
+        }
+        .no-selection {
+            color: #888;
+            font-style: italic;
+        }
+        .participants-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .participants-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+        .delete-btn {
+            background-color: #ff3b30;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 15px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .date-display {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .month-container {
+            margin-bottom: 20px;
+        }
+        .popular-date {
+            margin-bottom: 15px;
+        }
+        .popular-date-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .popular-count {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .popularity-bar {
+            height: 8px;
+            background-color: #4CAF50;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Rencontre virtuelle FI-28</h1>
+    <p>Sélectionnez les fins de semaine disponibles du 26 avril au 31 août 2025.</p>
+
+    <div>
+        <h2>Ajouter un participant</h2>
+        <input type="text" id="participant-name" placeholder="Nom du participant">
+        <button id="add-participant-button">Ajouter</button>
+    </div>
+
+    <div>
+        <h2>Disponibilités</h2>
+        <button id="select-all-btn" class="green">Tout sélectionner</button>
+        <button id="deselect-all-btn" class="red">Tout désélectionner</button>
+        
+        <h3>Avril 2025</h3>
+        <div id="avril-weekends"></div>
+        
+        <h3>Mai 2025</h3>
+        <div id="mai-weekends"></div>
+        
+        <h3>Juin 2025</h3>
+        <div id="juin-weekends"></div>
+        
+        <h3>Juillet 2025</h3>
+        <div id="juillet-weekends"></div>
+        
+        <h3>Août 2025</h3>
+        <div id="aout-weekends"></div>
+    </div>
+
+    <div class="card">
+        <h2>Participants</h2>
+        <ul id="participants" class="participants-list">
+            <li class="no-selection">Aucun participant</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>Vos sélections</h2>
+        <div id="selected-dates-list">
+            <div class="no-selection">Aucune date sélectionnée</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Statistiques des sélections</h2>
+        <p id="total-selected-weekends">Nombre total de fins de semaine sélectionnées : 0</p>
+        
+        <h3>Les dates les plus populaires</h3>
+        <div id="popular-dates">
+            <div class="no-selection">Aucune date n'a encore été sélectionnée</div>
+        </div>
+    </div>
+
+    <script>
+        // Éléments DOM
+        const participantsList = document.getElementById('participants');
+        const participantNameInput = document.getElementById('participant-name');
+        const selectedDatesList = document.getElementById('selected-dates-list');
+        const totalSelectedWeekendsElement = document.getElementById('total-selected-weekends');
+        const selectAllBtn = document.getElementById('select-all-btn');
+        const deselectAllBtn = document.getElementById('deselect-all-btn');
+        const addParticipantBtn = document.getElementById('add-participant-button');
+        const popularDatesContainer = document.getElementById('popular-dates');
+        
+        // Conteneurs des mois
+        const avrilContainer = document.getElementById('avril-weekends');
+        const maiContainer = document.getElementById('mai-weekends');
+        const juinContainer = document.getElementById('juin-weekends');
+        const juilletContainer = document.getElementById('juillet-weekends');
+        const aoutContainer = document.getElementById('aout-weekends');
+
+        // Variables globales
+        let selectedDates = new Set();
+        let participants = [];
+        let participantSelections = {}; // { participantName: Set<date> }
+        let datePopularity = {}; // { date: voteCount }
+        let allWeekendItems = []; // Pour stocker toutes les références aux éléments de weekend
+
+        // Noms des mois et jours en français
+        const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+        const dayNames = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+
+        // Fonction pour vérifier si une date est un weekend
+        function isWeekend(date) {
+            const dayOfWeek = date.getDay();
+            return dayOfWeek === 0 || dayOfWeek === 6; // 0 pour Dimanche, 6 pour Samedi
+        }
+
+        // Fonction pour formater une date en YYYY-MM-DD
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Fonction corrigée pour formater une date pour l'affichage
+        function formatDateForDisplay(dateStr) {
+            // Créer une date en forçant le fuseau horaire local
+            const [year, month, day] = dateStr.split('-');
+            const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            
+            const dayName = dayNames[date.getDay()];
+            const dayNum = date.getDate();
+            const monthName = monthNames[date.getMonth()];
+            const yearNum = date.getFullYear();
+            return `${dayName} ${dayNum} ${monthName} ${yearNum}`;
+        }
+
+        // Créer un élément pour une date de weekend
+        function createWeekendElement(date) {
+            const dayOfWeek = date.getDay();
+            const dayName = dayNames[dayOfWeek];
+            const day = date.getDate();
+            const month = date.getMonth();
+            const year = date.getFullYear();
+            const formattedDate = formatDate(date);
+
+            const weekendDiv = document.createElement('div');
+            weekendDiv.className = 'weekend-item';
+            weekendDiv.dataset.date = formattedDate;
+            
+            weekendDiv.innerHTML = `
+                <div class="weekend">${dayName}</div>
+                <div>${day} ${monthNames[month]} ${year}</div>
+            `;
+
+            weekendDiv.addEventListener('click', function() {
+                const date = this.dataset.date;
+                if (selectedDates.has(date)) {
+                    selectedDates.delete(date);
+                    this.classList.remove('selected');
+                } else {
+                    selectedDates.add(date);
+                    this.classList.add('selected');
+                }
+                updateSelectedDatesList();
+            });
+
+            allWeekendItems.push(weekendDiv);
+            return weekendDiv;
+        }
+
+        // Générer les weekends pour chaque mois
+        function generateWeekends() {
+            // Vider les conteneurs
+            avrilContainer.innerHTML = '';
+            maiContainer.innerHTML = '';
+            juinContainer.innerHTML = '';
+            juilletContainer.innerHTML = '';
+            aoutContainer.innerHTML = '';
+            
+            allWeekendItems = [];
+            
+            // Date de début et fin pour la période considérée
+            const startDate = new Date(2025, 3, 26); // 26 avril 2025
+            const endDate = new Date(2025, 7, 31);   // 31 août 2025
+
+            // Générer chaque weekend dans la période
+            let currentDate = new Date(startDate);
+            while (currentDate <= endDate) {
+                if (isWeekend(currentDate)) {
+                    const weekendElement = createWeekendElement(new Date(currentDate));
+                    
+                    // Ajouter l'élément au bon conteneur de mois
+                    const month = currentDate.getMonth();
+                    switch(month) {
+                        case 3: // Avril
+                            avrilContainer.appendChild(weekendElement);
+                            break;
+                        case 4: // Mai
+                            maiContainer.appendChild(weekendElement);
+                            break;
+                        case 5: // Juin
+                            juinContainer.appendChild(weekendElement);
+                            break;
+                        case 6: // Juillet
+                            juilletContainer.appendChild(weekendElement);
+                            break;
+                        case 7: // Août
+                            aoutContainer.appendChild(weekendElement);
+                            break;
+                    }
+                }
+                // Avancer d'un jour
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        }
+
+        // Mise à jour de la liste des dates sélectionnées
+        function updateSelectedDatesList() {
+            selectedDatesList.innerHTML = '';
+            
+            if (selectedDates.size === 0) {
+                selectedDatesList.innerHTML = '<div class="no-selection">Aucune date sélectionnée</div>';
+            } else {
+                const sortedDates = Array.from(selectedDates).sort();
+                sortedDates.forEach(date => {
+                    const dateDiv = document.createElement('div');
+                    dateDiv.className = 'date-display';
+                    dateDiv.textContent = formatDateForDisplay(date);
+                    selectedDatesList.appendChild(dateDiv);
+                });
+            }
+            
+            updateSelectionStats();
+        }
+
+        // Mise à jour des statistiques de sélection
+        function updateSelectionStats() {
+            totalSelectedWeekendsElement.textContent = `Nombre total de fins de semaine sélectionnées : ${selectedDates.size}`;
+            updatePopularDates();
+        }
+
+        // Calcul et affichage des dates populaires
+        function updatePopularDates() {
+            // Réinitialiser le compteur de popularité
+            datePopularity = {};
+            
+            // Compter la sélection actuelle
+            selectedDates.forEach(date => {
+                if (!datePopularity[date]) datePopularity[date] = 0;
+                datePopularity[date]++;
+            });
+            
+            // Ajouter les sélections des participants
+            for (const participant in participantSelections) {
+                const dates = participantSelections[participant];
+                dates.forEach(date => {
+                    if (!datePopularity[date]) datePopularity[date] = 0;
+                    datePopularity[date]++;
+                });
+            }
+            
+            // Convertir en tableau et trier par popularité
+            const sortedDates = Object.keys(datePopularity).sort((a, b) => {
+                return datePopularity[b] - datePopularity[a];
+            });
+            
+            // Afficher les 3 plus populaires
+            popularDatesContainer.innerHTML = '';
+            
+            if (sortedDates.length === 0) {
+                popularDatesContainer.innerHTML = '<div class="no-selection">Aucune date n\'a encore été sélectionnée</div>';
+                return;
+            }
+            
+            // Déterminer le nombre maximum de votes pour calculer les proportions des barres
+            const maxVotes = datePopularity[sortedDates[0]];
+            
+            // Afficher les 3 dates les plus populaires (ou moins s'il y en a moins)
+            const datesToShow = Math.min(3, sortedDates.length);
+            
+            for (let i = 0; i < datesToShow; i++) {
+                const date = sortedDates[i];
+                const votes = datePopularity[date];
+                const percentage = (votes / maxVotes) * 100;
+                
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'popular-date';
+                
+                const dateInfoDiv = document.createElement('div');
+                dateInfoDiv.className = 'popular-date-info';
+                
+                const dateText = document.createElement('span');
+                dateText.textContent = formatDateForDisplay(date);
+                
+                const voteCount = document.createElement('span');
+                voteCount.className = 'popular-count';
+                voteCount.textContent = `${votes} vote${votes > 1 ? 's' : ''}`;
+                
+                dateInfoDiv.appendChild(dateText);
+                dateInfoDiv.appendChild(voteCount);
+                
+                const bar = document.createElement('div');
+                bar.className = 'popularity-bar';
+                bar.style.width = `${percentage}%`;
+                
+                dateDiv.appendChild(dateInfoDiv);
+                dateDiv.appendChild(bar);
+                
+                popularDatesContainer.appendChild(dateDiv);
+            }
+        }
+
+        // Sélectionner toutes les fins de semaine
+        function selectAllWeekends() {
+            allWeekendItems.forEach(item => {
+                const date = item.dataset.date;
+                selectedDates.add(date);
+                item.classList.add('selected');
+            });
+            updateSelectedDatesList();
+        }
+
+        // Désélectionner toutes les fins de semaine
+        function deselectAllWeekends() {
+            allWeekendItems.forEach(item => {
+                const date = item.dataset.date;
+                selectedDates.delete(date);
+                item.classList.remove('selected');
+            });
+            updateSelectedDatesList();
+        }
+
+        // Ajouter un participant
+        function addParticipant() {
+            const participantName = participantNameInput.value.trim();
+            
+            if (!participantName) {
+                alert("Veuillez entrer un nom de participant.");
+                return;
+            }
+            
+            if (participants.includes(participantName)) {
+                alert("Ce participant existe déjà!");
+                return;
+            }
+            
+            participants.push(participantName);
+            participantSelections[participantName] = new Set(selectedDates);
+            
+            updateParticipantsList();
+            updatePopularDates(); // Mettre à jour les dates populaires
+            participantNameInput.value = '';
+        }
+
+        // Supprimer un participant
+        function deleteParticipant(name) {
+            const index = participants.indexOf(name);
+            if (index !== -1) {
+                participants.splice(index, 1);
+                delete participantSelections[name];
+                updateParticipantsList();
+                updatePopularDates(); // Mettre à jour les dates populaires
+            }
+        }
+
+        // Mise à jour de la liste des participants
+        function updateParticipantsList() {
+            participantsList.innerHTML = '';
+            
+            if (participants.length === 0) {
+                const noParticipants = document.createElement('li');
+                noParticipants.className = 'no-selection';
+                noParticipants.textContent = 'Aucun participant';
+                participantsList.appendChild(noParticipants);
+                return;
+            }
+            
+            participants.forEach(name => {
+                const li = document.createElement('li');
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = name;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = 'X';
+                deleteBtn.addEventListener('click', () => deleteParticipant(name));
+                
+                li.appendChild(nameSpan);
+                li.appendChild(deleteBtn);
+                participantsList.appendChild(li);
+            });
+        }
+
+        // Écouteurs d'événements
+        selectAllBtn.addEventListener('click', selectAllWeekends);
+        deselectAllBtn.addEventListener('click', deselectAllWeekends);
+        addParticipantBtn.addEventListener('click', addParticipant);
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            generateWeekends();
+            updateSelectedDatesList();
+            updateParticipantsList();
+            updatePopularDates();
+        });
+
+        // Initialiser immédiatement aussi (certains navigateurs mobiles peuvent avoir des comportements différents)
+        generateWeekends();
+        updateSelectedDatesList();
+        updateParticipantsList();
+        updatePopularDates();
+    </script>
+</body>
+</html>
